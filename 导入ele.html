@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="http://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" />
+    <script src="https://cdn.bootcss.com/vue/2.4.2/vue.min.js"></script>
+  <!-- 引入样式 -->
+<link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+<!-- 引入组件库 -->
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+</head>
+
+<body>
+    <div id="app" v-cloak>
+        <input type="file" @change="importExcel($event.target)" />
+        <div style="overflow: auto;" v-if="tableData&&tableData.length>0">
+        	 <el-table
+        	  border=true
+		      :data="tableData"
+		      style="width: 100%">
+
+			      <el-table-column
+			      	v-for="item in tableHeader"
+			        :prop="item.title"
+			        :label="item.text"
+			        width="180">
+			      </el-table-column>
+	
+		    </el-table>
+        </div>
+    </div>
+</body>
+
+<script src="https://cdn.bootcss.com/xlsx/0.11.3/xlsx.full.min.js"></script>
+<script>
+
+
+    var app = new Vue({
+        el: "#app",
+        data() {
+            return {
+                wb: '',
+                tableHeader: [],
+                tableData: []
+            }
+        },
+        methods: {
+            importExcel(obj) {
+                if (!obj.files) {
+                    return;
+                }
+                let file = obj.files[0],
+                    types = file.name.split('.')[1],
+                    fileType = ["xlsx", "xlc", "xlm", "xls", "xlt", "xlw", "csv"].some(item => item === types);
+                if (!fileType) {
+                    alert("格式错误！请重新选择");
+                    return;
+                }
+                this.file2Xce(file).then(tabJson => {
+                    if (tabJson && tabJson.length > 0) {
+                    	// [{"地址":'asfasf',"姓名":"张三"}]
+                    	this.tableHeader = this.formDate(tabJson)
+                    	 this.tableData = this.formDateBody(tabJson);
+                    	//[{日期: "5/2/16", 姓名: "王小虎", 地址: "上海市"}]
+                    	//[{date: "日期", name: "王小虎", adress: "上海市"}]
+                    	 this.$nextTick( ()=> {
+					        this.tableHeader = this.formDate(tabJson)
+                    		this.tableData = this.formDateBody(tabJson);
+                    		this.$forceUpdate()
+					      })
+                    	 this.$forceUpdate()
+                    	console.log(this.tableHeader)
+                    	console.log(this.tableData)
+
+                    }
+                });
+            },
+            formDateBody(data){
+        		//[{日期: "5/2/16", 姓名: "王小虎", 地址: "上海市"}]
+        		var list=[];
+        		var obj={};
+                //[{date: "日期", name: "王小虎", adress: "上海市"}]
+            	for(var i=0;i<data.length;i++){
+            		Object.keys(data[i]).map((key)=>{
+            			if(key=="日期"){
+            				obj["date"]=data[i][key]
+            			}else if(key=="姓名"){
+            				obj["name"]=data[i][key]
+            			}else if(key=="地址"){
+							obj["address"]=data[i][key]
+            			}
+            			
+            		})
+            		list.push(obj)
+            		obj={};
+            	}
+            	return list
+            },
+            file2Xce(file) {
+                return new Promise(function (resolve, reject) {
+                    let reader = new FileReader();
+                    reader.onload = function (e) {
+                        let data = e.target.result;
+                        this.wb = XLSX.read(data, {
+                            type: 'binary'
+                        });
+                        resolve(XLSX.utils.sheet_to_json(this.wb.Sheets[this.wb.SheetNames[0]]));
+                    };
+                    reader.readAsBinaryString(file);
+                });
+            },
+            formDate(data){
+				// [{"地址":'asfasf',"姓名":"张三","日期":"2018-20-2"}]
+
+				//[	{"text":"地址","title":"addredd"},
+				// 		{"text":"姓名","title":"name"},
+				// 		{"text":"日期","title":"date"},
+				// ]
+				var obj={};
+				var list=[];
+				for(var i=0;i<data.length;i++){
+					Object.keys(data[i]).map((key)=>{
+						console.log(key)
+						if(key=="地址"){
+							obj["title"]="address"
+							obj["text"]="地址"
+							console.log(333333333)
+							list.push(obj)
+						
+							
+						}
+						if(key=="日期"){
+							obj["title"]="date"
+							obj["text"]="日期"
+							console.log(111111111)
+							list.push(obj)
+							
+						}
+						if(key=="姓名"){
+							obj["title"]="name"
+							obj["text"]="姓名"
+							console.log(22222222)
+							list.push(obj)
+							
+						}
+							obj={};
+						// list.push(obj)
+					}) 
+					// console.log(obj)
+					// list.push(obj)
+					return list
+					
+				}
+				
+            },
+            dateTransition(outdata) {
+			　　let list = [];
+			　　var obj = {};
+			　　for(var i = 0; i < outdata.length; i++) {
+
+			　　　　for(var key in outdata[i]) {
+			　　　　　　if(key == '地址') {
+			// 　　　　　　　　obj['address'] = outdata[i][key];
+			   			 // [{title:'address',text:'姓名'}]
+			　　　　　　　　obj['title'] = "adress";
+			　　　　　　　　obj['text'] = "地址";
+                            // obj.push({"address":"地址"})
+			　　　　　　} else if(key == '姓名') {
+			// 　　　　　　　　obj['name'] = outdata[i][key];
+			　　　　　　　　　　obj['title'] = "name";
+			　　　　　　　　    obj['text'] = "姓名";
+			　　　　　　} else if(key == '日期') {
+			// 　　　　　　　　obj['date'] = outdata[i][key];
+			　　　　　　　　obj['title'] = "date";
+							obj['text'] = "日期";
+                            // obj.push({"date":"日期"})
+			　　　　　　}
+			　　　　}
+			　　　　list.push(obj);
+					return;
+			　　}
+			　　return list;
+			}
+        }
+    })
+</script>
+
+</html>

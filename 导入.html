@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="http://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" />
+</head>
+
+<body>
+    <div id="app" v-cloak>
+        <input type="file" @change="importExcel($event.target)" />
+        <div style="overflow: auto;" v-if="tableTbody&&tableTbody.length>0">
+        <!-- 	 <el-table
+		      :data="tableData"
+		      style="width: 100%">
+		      <el-table-column
+		      	v-for="item in tableHeader"
+		        prop="date"
+		        label="日期"
+		        width="180">
+		      </el-table-column>
+	
+		    </el-table> -->
+            <table class="table table-bordered" style="min-width: 100%;">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th v-for="(item,index) in tableHeader" :key="index">
+                            {{item}}
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="(row,index) in tableTbody" :key="index">
+                        <th scope="row">{{index}}+11111</th>
+                        <td v-for="col in tableHeader">{{row[col]}}</td>
+                    </tr>
+                </tbody>
+            </table> 
+        </div>
+    </div>
+</body>
+<script src="https://cdn.bootcss.com/vue/2.4.2/vue.min.js"></script>
+<script src="https://cdn.bootcss.com/xlsx/0.11.3/xlsx.full.min.js"></script>
+<script>
+
+
+    var app = new Vue({
+        el: "#app",
+        data() {
+            return {
+                wb: '',
+                tableHeader: [],
+                tableTbody: []
+            }
+        },
+        methods: {
+            importExcel(obj) {
+            	console.log(obj.files)
+                if (!obj.files) {
+                    return;
+                }
+                let file = obj.files[0],
+                    types = file.name.split('.')[1],
+                    fileType = ["xlsx", "xlc", "xlm", "xls", "xlt", "xlw", "csv"].some(item => item === types);
+                if (!fileType) {
+                    alert("格式错误！请重新选择");
+                    return;
+                }
+                this.file2Xce(file).then(tabJson => {
+                    if (tabJson && tabJson.length > 0) {
+                        // this.tableHeader = Object.keys(tabJson[0]);
+                        this.tableHeader = Object.keys(tabJson[0]);
+
+                       
+                        //地址: "上海市普陀区金沙江路 1518 弄",姓名: "王小虎",日期: "5/2/16"
+                         // this.tableHeader = this.dateTransition(tabJson)
+                        this.tableTbody = tabJson;
+                    }
+                });
+            },
+            file2Xce(file) {
+                return new Promise(function (resolve, reject) {
+                    let reader = new FileReader();
+                    reader.onload = function (e) {
+                        let data = e.target.result;
+                        this.wb = XLSX.read(data, {
+                            type: 'binary'
+                        });
+                        resolve(XLSX.utils.sheet_to_json(this.wb.Sheets[this.wb.SheetNames[0]]));
+                    };
+                    reader.readAsBinaryString(file);
+                });
+            },
+            dateTransition(outdata) {
+			　　let list = [];
+			　　var obj = {};
+			　　for(var i = 0; i < outdata.length; i++) {
+			　　　　obj = {};
+
+			　　　　for(var key in outdata[i]) {
+			　　　　　　if(key == '地址') {
+			// 　　　　　　　　obj['address'] = outdata[i][key];
+			　　　　　　　　obj['address'] = "地址";
+                            // obj.push({"address":"地址"})
+			　　　　　　} else if(key == '姓名') {
+			// 　　　　　　　　obj['name'] = outdata[i][key];
+			　　　　　　　　obj['name'] = "姓名";
+                            // obj.push({"name":"姓名"})
+			　　　　　　} else if(key == '日期') {
+			// 　　　　　　　　obj['date'] = outdata[i][key];
+			　　　　　　　　obj['date'] = "日期";
+                            // obj.push({"date":"日期"})
+			　　　　　　}
+			　　　　}
+			　　　　list.push(obj);
+            debugger
+			　　}
+			　　return list;
+			}
+        }
+    })
+</script>
+
+</html>
